@@ -189,34 +189,6 @@ for t in range(runs):
 print(f"NPV sim: {sum(pay) / runs}")
 
 
-# Sample sol
-max_T = 12
-T_vals = range(max_T)
-profits = []
-r = 0.05
-rho = 1 / (1 + r)
-
-psi = (0.2, 0.2, 0.6)
-h = (1000, 0, -1000)
-current_profits = np.inner(psi, h)
-discount = rho
-Q = np.identity(3)
-
-for t in T_vals:
-    Q = np.dot(Q, pH)
-    discount = discount * rho
-    current_profits += discount * np.inner(psi, np.dot(Q, h))
-    profits.append(current_profits)
-
-fig, ax = plt.subplots()
-ax.plot(profits, label="profits")
-ax.plot(np.zeros(max_T), "--", label="break even")
-ax.set_xlabel("time")
-ax.legend()
-
-plt.show()
-
-
 # Exercse 4.23
 
 psi = [0.2, 0.2, 0.6]
@@ -247,12 +219,14 @@ while True:
     t += 1
 print(f"Break even: {t}")
 
+
 # plotting
 T = 12
 r = 0.05
 rho = 1 / (1 + r)
 
 psi = [0.2, 0.2, 0.6]
+h = (1000, 0, -1000)
 
 profit = 0
 all_profits = list()
@@ -267,3 +241,31 @@ ts = np.linspace(0, T - 1, T)
 plt.plot(ts, all_profits, label="Profits")
 plt.plot(ts, np.zeros(T), "--", label="breakeven")
 plt.legend()
+plt.show()
+
+# Sample sol
+max_T = 12
+T_vals = range(max_T)
+profits = []
+r = 0.05
+rho = 1 / (1 + r)
+
+psi = (0.2, 0.2, 0.6)
+h = (1000, 0, -1000)
+current_profits = np.inner(psi, h)
+discount = 1
+Q = np.identity(3)
+
+for t in T_vals:
+    Q = np.dot(Q, pH)
+    discount = discount * rho
+    current_profits += discount * np.inner(psi, np.dot(Q, h))
+    profits.append(current_profits)
+
+fig, ax = plt.subplots()
+ax.plot(profits, label="profits")
+ax.plot(np.zeros(max_T), "--", label="break even")
+ax.set_xlabel("time")
+ax.legend()
+
+plt.show()
