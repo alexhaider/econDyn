@@ -11,6 +11,7 @@ Created on Thu Apr 17 21:14:06 2025
 # ------------
 
 import numpy as np
+import pandas as pd
 from genfinitemc import MC, path_prob, sample
 import matplotlib.pyplot as plt
 import itertools
@@ -269,3 +270,94 @@ ax.set_xlabel("time")
 ax.legend()
 
 plt.show()
+
+
+# --------------
+# Listing 4.6
+# --------------
+pH = ((0.971, 0.029, 0.000), (0.145, 0.778, 0.077), (0.000, 0.508, 0.492))
+size_pH = len(pH)
+
+I = np.identity(size_pH)
+M_one = np.ones((size_pH, size_pH))
+v_one = np.ones((size_pH, 1))
+
+A = np.transpose(I - pH + M_one)
+x = np.linalg.solve(A, v_one)
+print(f"Stationary dist: {x}")
+
+x1 = np.linalg.inv(A) @ v_one
+print(f"Stationary dist: {x1}")
+
+
+# --------------
+# Ex 4.3.8
+# --------------
+pQ = (
+    (0.97, 0.03, 0, 0, 0),
+    (0.05, 0.92, 0.03, 0, 0),
+    (0, 0.04, 0.92, 0.04, 0),
+    (0, 0, 0.04, 0.94, 0.02),
+    (0, 0, 0, 0.01, 0.99),
+)
+psi = (0.1, 0.2, 0.1, 0.4, 0.2)
+
+
+def find_stat_dist(p):
+    size_p = len(p)
+    eye = np.identity(size_p)
+    M_1 = np.ones((size_p, size_p))
+    v_1 = np.ones((size_p, 1))
+
+    A = np.transpose(eye - p + M_1)
+    return np.linalg.solve(A, v_1).flatten()
+
+
+sdist = find_stat_dist(pQ)
+
+x = (1, 0, 0, 0, 0)
+
+res = list()
+for t in range(1001):
+    res.append(x)
+    x = np.matmul(x, pQ)
+
+mc_1 = MC(pQ, x)
+pth = mc_1.marg_dist(1000, 1000, x)
+
+x_axis = ["x" + str(i + 1) for i in range(len(x))]
+t = (10, 500, 1000)
+cols = ("blue", "orange", "yellow")
+for i, time in enumerate(t):
+    plt.bar(x_axis, res[time], color=cols[i])
+plt.bar(x_axis, sdist, color="green")
+plt.bar(x_axis, pth, color="brown")
+plt.show()
+
+
+# --------------
+# Ex 4.3.9
+# --------------
+sdist_ph = find_stat_dist(pH)
+print(np.inner(sdist_ph, h))
+
+# --------------
+# Ex 4.3.10
+# --------------
+psi = sdist
+for i in range(20):
+    psi = psi @ pQ
+
+
+# --------------
+# Ex 4.3.11
+# --------------
+p1 = np.array([[0, 1], [1, 0]])
+print(find_stat_dist(p1))
+
+
+all_psi = np.zeros((100, 2))
+tmp = np.array([0.8, 0.2])
+for i in range(100):
+    all_psi[i,] = tmp
+    tmp = tmp @ p1

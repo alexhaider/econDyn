@@ -1,6 +1,87 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import quad
+from random import uniform
+
+# ---------
+# Consumer
+# ---------
+
+
+class Consumer:
+    def __init__(self, w):
+        "Initialize the consumer with w USD of wealth"
+        self.wealth = w
+
+    def earn(self, y):
+        "The consumer earns y USD"
+        self.wealth += y
+
+    def spend(self, x):
+        "The consumer spends x USD if feasible"
+        new_wealth = self.wealth - x
+        if new_wealth < 0:
+            print("Insufficient funds")
+        else:
+            self.wealth = new_wealth
+
+
+consumers = list()
+for i in range(100):
+    consumers.append(Consumer(np.random.uniform(10, 100)))
+
+c1 = Consumer(10)
+
+
+# ---------
+# Solow
+# ---------
+
+
+class Solow:
+    def __init__(self, n=0.05, s=0.25, delta=0.1, alpha=0.3, z=2.0, k=1.0):
+        self.n, self.s, self.delta, self.alpha, self.z = n, s, delta, alpha, z
+        self.k = k
+
+    def unpack_params(self):
+        n, s, delta, alpha, z = self.n, self.s, self.delta, self.alpha, self.z
+        return n, s, delta, alpha, z
+
+    def h(self):
+        n, s, delta, alpha, z = self.unpack_params()
+        return (s * z * self.k**alpha + (1 - delta) * self.k) / (1 + n)
+
+    def update(self):
+        self.k = self.h()
+
+    def steady_state(self):
+        n, s, delta, alpha, z = self.unpack_params()
+        return (s * z / (n + delta)) ** (1 / (1 - alpha))
+
+    def generate_sequence(self, t):
+        path = []
+        for i in range(t):
+            path.append(self.k)
+            self.update()
+        return path
+
+
+s1 = Solow()
+s2 = Solow(k=8.0)
+
+T = 60
+fig, ax = plt.subplots(figsize=(9, 6))
+
+ax.plot([s1.steady_state()] * T, "k-", label="steady state")
+
+for s in s1, s2:
+    lb = f"capital series from initial condition {s.k}"
+    ax.plot(s.generate_sequence(T), "o-", lw=2, alpha=0.6, label=lb)
+
+ax.set_xlabel("$t$", fontsize=14)
+ax.set_ylabel("$k_t$", fontsize=14)
+ax.legend()
+plt.show()
 
 
 class Market:
@@ -104,3 +185,43 @@ print(f"Prod: {m.ps()}")
 #     ax.plot([i] * len(tmp_res), tmp_res, "b.", ms=0.6)
 
 # plt.show()
+
+
+# ---------
+# Exc 8.5.1
+# ---------
+
+
+class ECDF:
+    def __init__(self, sample):
+        self.sample = sample
+
+    def __call__(self, x):
+        return sum([i <= x for i in self.sample]) / len(self.sample)
+
+
+samples = [uniform(0, 1) for i in range(1000)]
+F = ECDF(samples)
+print(F(0.5))
+
+# ---------
+# Exc 8.5.2
+# ---------
+
+
+class Poly:
+    def __init__(self, a):
+        self.a = a
+
+    def __call__(self, x):
+        res = 0.0
+        for index, coeff in enumerate(self.a):
+            res += coeff * x**index
+        return res
+
+    def differentiate(self):
+        new_coeffs = []
+        for index, coeff in enumerate(self.a):
+            new_coeffs.append(index * coeff)
+        del new_coeffs[0]
+        return new_coeffs
