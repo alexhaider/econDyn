@@ -49,6 +49,8 @@ print(res)
 # ==============
 
 # evaluate analytically
+pH = ((0.971, 0.029, 0.000), (0.145, 0.778, 0.077), (0.000, 0.508, 0.492))
+x = [0, 0, 1]
 res = fp(pH, x, 1e-6, 10000)  # find the fixed point
 expected_t = [1 / i for i in res[0]]
 
