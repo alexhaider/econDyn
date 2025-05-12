@@ -12,6 +12,7 @@ Created on Thu Apr 17 21:14:06 2025
 
 import numpy as np
 import pandas as pd
+import math
 from genfinitemc import MC, path_prob, sample
 import matplotlib.pyplot as plt
 import itertools
@@ -361,3 +362,52 @@ tmp = np.array([0.8, 0.2])
 for i in range(100):
     all_psi[i,] = tmp
     tmp = tmp @ p1
+
+
+# -----------------------------
+# Dobrushin coeffe of p_Q^23
+# -----------------------------
+
+
+pQ = np.array(
+    [
+        [0.97, 0.03, 0, 0, 0],
+        [0.05, 0.92, 0.03, 0, 0],
+        [0, 0.04, 0.92, 0.04, 0],
+        [0, 0, 0.04, 0.94, 0.02],
+        [0, 0, 0, 0.01, 0.99],
+    ]
+)
+
+pQ23 = np.identity(len(pQ))
+for i in range(25):
+    pQ23 = pQ23 @ pQ
+
+
+def get_alpha(Mat):
+    trans = np.zeros(sum(range(len(Mat) + 1)))
+    index = 0
+    for i in range(len(Mat)):
+        for j in range(i, len(Mat)):
+            for k in range(len(Mat)):
+                trans[index] += min(Mat[i, k], Mat[j, k])
+            index += 1
+    return min(trans)
+
+
+# print(f"The Dobrushin coefficient is: {min(trans)}.")
+
+
+def test_stab(Mat, n=50):
+    m = np.identity(len(Mat))
+    success = False
+    for i in range(n):
+        m = m @ Mat
+        alpha = get_alpha(m)
+        if alpha > 0:
+            success = True
+            break
+    return (success, i)
+
+
+pq_test = test_stab(pQ)
