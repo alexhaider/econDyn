@@ -1,7 +1,13 @@
 import numpy as np
 from scipy import stats
+import matplotlib.pyplot as plt
 
-beta, rho, B, M = 0.5, 0.9, 10, 6
+
+# ==============
+# Ex 5.1.2
+# ==============
+
+beta, rho, B, M = 0.5, 0.9, 10, 5
 
 Z = stats.randint(0, B + 1)
 sigma = np.empty(range(B + 1))
@@ -22,8 +28,8 @@ def dist(v0, v1):
 
 
 def T(v):
-    Tv = np.empty_like(S)
-    sigma = np.empty_like(S)
+    Tv = np.empty(len(S))
+    sigma = np.empty(len(S))
     for x in S:
         feasible_vals = Gamma(x)
         max_val = -np.inf
@@ -36,9 +42,8 @@ def T(v):
     return Tv, sigma
 
 
-def value_iter(v0, tol=1e-5, max_iter=1e3, verbose=True):
+def value_iter(v0, tol=1e-4, max_iter=1e3, verbose=True):
     iter = 0
-    success = False
     while True:
         v1, sigma = T(v0)
         d = dist(v0, v1)
@@ -48,64 +53,69 @@ def value_iter(v0, tol=1e-5, max_iter=1e3, verbose=True):
             success = True
             break
         if iter > max_iter:
+            success = False
             break
         v0 = v1
         iter += 1
     return v1, sigma, success, iter, v0
 
 
-res = value_iter(U(S))
+v_star1, sigma, *rest = value_iter(U(S))
+fig, ax = plt.subplots()
+ax.plot(S, v_star1, label="Value function iteration\n(approx. value function)")
+ax.legend()
+ax.set_xlabel("$x$")
+ax.set_ylabel("$v^*$")
+plt.show()
 
 
-# S = np.array(range(B + M + 1))
-# Z = np.array(range(B + 1))
-# tol = 0.00001
-# max_iter = 1000
-
-# # phi
-# phi = stats.randint(0, B + 1)
+# ==============
+# Ex 5.1.3
+# ==============
 
 
-# def U(x):
-#     return x**beta
+def get_alpha(Mat):
+    trans = np.zeros(sum(range(len(Mat) + 1)))
+    index = 0
+    for i in range(len(Mat)):  # x loop
+        for j in range(i, len(Mat)):  # x' loop
+            for k in range(len(Mat)):  # y loop
+                trans[index] += min(Mat[i, k], Mat[j, k])
+            index += 1
+    return min(trans)
 
 
-# def Gamma(x):
-#     return np.array(range(0, min(x, M) + 1))
+def compute_stat_dist(Mat):
+    size_mat = len(Mat)
+    eye = np.identity(size_mat)
+    M_one = np.ones((size_mat, size_mat))
+    v_one = np.ones((size_mat, 1))
+
+    A = np.transpose(eye - pB + M_one)
+    x = np.linalg.solve(A, v_one)
+    return x.flatten()
 
 
-# def dist(v0, v1):
-#     return max(np.abs(v0 - v1))
+pB = np.empty((B + M + 1, B + M + 1))
 
+for i in range(B + M + 1):
+    for j in range(B + M + 1):
+        a = sigma[i]
+        # X_{t+1} = a_t + W_{t+1}
+        # it's therefore not possible for X_{t+1} < a_t
+        # it's also not possible to have X_{t+1} > a_t + max(W_{t+1})
+        # otherwise: probability is fixed
+        if j < a or j > a + B:
+            pB[i, j] = 0
+        else:
+            pB[i, j] = phi_z[0]
 
-# def T(v):
-#     Tv = np.empty_like(v)
-#     x_iter = 0
-#     for x in S:
-#         possible_vals = Gamma(x)
-#         iter = 0
-#         for a in possible_vals:
-#             vals = np.empty_like(possible_vals)
-#             y = U(x - a)
-#             for z in Z:
-#                 y += rho * v[a + z] * phi.pmf(z)
-#             vals[iter] = y
-#             iter += 1
-#         Tv[x_iter] = max(vals)
-#         x_iter += 1
-#     return Tv
+print(f"Dobrushin coeff: {get_alpha(pB)}.")
 
+x_stat = compute_stat_dist(pB)
+fig, ax = plt.subplots()
+ax.bar(S, x_stat, label=r"$\psi^\ast$")
+ax.legend()
+ax.set_xlabel("x")
 
-# success = False
-# c_iter = 0
-# v0 = U(S)
-# while True:
-#     v1 = T(v0)
-#     d = dist(v0, v1)
-#     if d < tol:
-#         success = True
-#         break
-#     c_iter += 1
-#     if c_iter == max_iter:
-#         break
-#     v0 = v1
+plt.show()
