@@ -171,4 +171,4 @@ def f(x):
     return np.sin(4 * (x - 1 / 4)) + x + x**20 - 1
 
 
-print(bisect_rec(bisect, f))
+print(bisect_rec(f, 0, 1))

@@ -67,7 +67,7 @@ ax.legend()
 ax.set_xlabel("$x$")
 ax.set_ylabel("$v^*$")
 plt.show()
-
+sigma_vfi = sigma
 
 # ==============
 # Ex 5.1.3
@@ -119,3 +119,64 @@ ax.legend()
 ax.set_xlabel("x")
 
 plt.show()
+
+
+# =======================================================
+# Policy iteration
+# =======================================================
+beta, rho, B, M = 0.5, 0.9, 10, 5
+
+Z = stats.randint(0, B + 1)
+sigma = np.empty(range(B + 1))
+phi_z = Z.pmf(range(B + 1))
+S = np.array(range(B + M + 1))
+
+
+def get_p(sigma, size=B + M + 1):
+    pB = np.empty((size, size))
+
+    for i in range(size):
+        for j in range(size):
+            a = sigma[i]
+            if j < a or j > a + B:
+                pB[i, j] = 0
+            else:
+                pB[i, j] = phi_z[0]
+    return pB
+
+
+def get_v_sigma(sigma, iter_v=50):
+    N = len(S)
+    p_mat = get_p(sigma)
+
+    def M_sigma(h):
+        return p_mat @ r_sigma
+
+    discount = 1
+    v_sigma = np.zeros(N)
+    r_sigma = U(S - sigma)
+    for i in range(iter_v):
+        v_sigma += discount * r_sigma
+        discount = discount * rho
+        r_sigma = M_sigma(r_sigma)
+    return v_sigma
+
+
+def policy_iter(sig=np.zeros(len(S)), max_iter=1000, tol=1e-5):
+    iter = 0
+    while True:
+        v_sig = get_v_sigma(sig)
+        Tv, sig_star = T(v_sig)
+        e = sig - sig_star
+        if np.max(np.abs(e)) < tol:
+            success = True
+            break
+        if iter == max_iter:
+            success = False
+            break
+        sig = sig_star
+        iter += 1
+    return sig_star, success
+
+
+sigma_pi, *rest = policy_iter()
